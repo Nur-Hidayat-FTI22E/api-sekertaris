@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 25, 2024 at 04:52 PM
+-- Generation Time: Jul 09, 2024 at 01:24 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.1.25
 
@@ -24,50 +24,35 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `userAccount`
+-- Table structure for table `user`
 --
 
-CREATE TABLE `userAccount` (
-  `Uid` int(11) NOT NULL,
-  `Email` varchar(50) NOT NULL,
-  `Password` varchar(20) NOT NULL
+CREATE TABLE `user` (
+  `uid` int(11) NOT NULL,
+  `email` varchar(40) NOT NULL,
+  `password` text NOT NULL,
+  `role` enum('admin','guest') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `userAccount`
---
-
-INSERT INTO `userAccount` (`Uid`, `Email`, `Password`) VALUES
-(1, 'dayat@gmail.com', '123456789'),
-(2, 'kerenjelek3@gmail.com', 'asdadadad'),
-(3, '\' = \'\' or \'0\' = \'0\'-- -', ''),
-(4, 'cnt@gmail.com', '123'),
-(5, 'cnt12@gmail.com', '12345678'),
-(6, 'nabila@gmail.com', '123123123'),
-(7, 'cnt12@gmail.com', '123217323'),
-(8, 'ccnt@gmail.com', 'ccntdotorg'),
-(9, 'ccnt12@gmail.com', 'ccntdotorg'),
-(10, 'ccnt012@gmail.com', 'asubanget');
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `userAccount`
+-- Indexes for table `user`
 --
-ALTER TABLE `userAccount`
-  ADD PRIMARY KEY (`Uid`);
+ALTER TABLE `user`
+  ADD PRIMARY KEY (`uid`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT for table `userAccount`
+-- AUTO_INCREMENT for table `user`
 --
-ALTER TABLE `userAccount`
-  MODIFY `Uid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+ALTER TABLE `user`
+  MODIFY `uid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
