@@ -20,14 +20,16 @@ import (
 )
 
 type SignupUser struct {
-	Email           string `json:"email" validate:"required,email,min=5,max=20"`
-	Password        string `json:"password" validate:"required,min=8"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=Password"`
-	Role            string `json:"role" validate:"required,oneof=admin guest"`
+	Email     string `json:"email" validate:"required,email,min=5,max=40"`
+	Nama      string `json:"nama" validate:"required,min=5,max=40"`
+	Handphone string `json:"handphone" validate:"required,number,min=12,max=15"`
+	Angkatan  int    `json:"angkatan" validate:"required,number"`
+	Password  string `json:"password" validate:"required,min=8"`
+	Role      string `json:"role"`
 }
 
 type LoginUser struct {
-	Email    string `json:"email" validate:"required,email,min=5,max=20"`
+	Email    string `json:"email" validate:"required,email,min=5,max=40"`
 	Password string `json:"password" validate:"required,min=8"`
 }
 
@@ -88,7 +90,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/daftar", SignupHandler).Methods("POST")
+	r.Handle("/daftar", JWTMiddleware(AdminMiddleware(http.HandlerFunc(SignupHandler)))).Methods("POST")
 	r.HandleFunc("/login", SigninHandler).Methods("POST")
 	// r.HandleFunc("/dashboard", DashboardHandler).Methods("GET")
 
@@ -131,11 +133,6 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Password != user.ConfirmPassword {
-		http.Error(w, `{"Error Message": "Password tidak sama"}`, http.StatusBadRequest)
-		return
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
 	if err != nil {
 		log.Println("Error hashing password:", err)
@@ -143,7 +140,9 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO user (email, password, role) VALUES (?, ?, ?)", user.Email, hashedPassword, user.Role)
+	user.Role = "sekertaris"
+
+	_, err = db.Exec("INSERT INTO user (email, nama, handphone, angkatan, password, role) VALUES (?, ?, ?, ?, ?, ?)", user.Email, user.Nama, user.Handphone, user.Angkatan, hashedPassword, user.Role)
 	if err != nil {
 		http.Error(w, `{"Error Message": "`+err.Error()+`"}`, http.StatusInternalServerError)
 		return
@@ -153,6 +152,7 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message": "User created successfully"}`))
 }
+
 func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	var user LoginUser
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -184,6 +184,7 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	expirationTime := time.Now().Add(5 * time.Minute)
 	claims := &Claims{
 		Email: user.Email,
+		Role:  role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -225,12 +226,27 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
+			log.Println("Invalid token:", err)
 			http.Error(w, `{"Error Message": "Invalid token"}`, http.StatusUnauthorized)
 			return
 		}
 
-		context1 := context.WithValue(r.Context(), "Email", claims.Email)
-		context1 = context.WithValue(context1, "Role", claims.Role)
-		next.ServeHTTP(w, r.WithContext(context1))
+		log.Println("Token valid. Email:", claims.Email, "Role:", claims.Role)
+
+		ctx := context.WithValue(r.Context(), "Email", claims.Email)
+		ctx = context.WithValue(ctx, "Role", claims.Role)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func AdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Context().Value("Role")
+		log.Println("Role in AdminMiddleware:", role)
+		if role != "admin" {
+			http.Error(w, `{"kamu siapa?, aku siapa?"}`, http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
